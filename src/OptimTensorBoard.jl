@@ -9,23 +9,24 @@ using Logging
 using TensorBoardLogger
 
 """
-    optimcallback(logger; [callback])
-    optimcallback(tblogger_args...; [callback], [tblogger_kwargs...])
+    optimcallback(logger; [callback, savearrays])
+    optimcallback(tblogger_args...; [callback, savearrays], [tblogger_kwargs...])
 
 Create a callable object that is suitable for passing it to `Optim.Options`.
 `callback` is a callable that is called after this callback is called.
 """
-optimcallback(logger::AbstractLogger; callback=returnfalse) =
-    OptimCallback(logger, callback)
+optimcallback(logger::AbstractLogger; callback=returnfalse, savearrays=true) =
+    OptimCallback(logger, callback, savearrays)
 
-optimcallback(args...; callback=returnfalse, kwargs...) =
-    OptimCallback(TBLogger(args...; kwargs...), callback)
+optimcallback(args...; callback=returnfalse, savearrays=true, kwargs...) =
+    OptimCallback(TBLogger(args...; kwargs...), callback, savearrays)
 
 returnfalse(_) = false
 
 struct OptimCallback
     logger::AbstractLogger
     callback
+    savearrays::Bool
 end
 
 function (cb::OptimCallback)(tr)
@@ -45,7 +46,11 @@ function (cb::OptimCallback)(tr)
         for (key, value) in os.metadata
             if value isa Union{Real, Complex}
                 log_value(logger, "optim/metadata/$key", value)
-            elseif value isa AbstractArray && ndims(value) in (1, 2, 3)
+            elseif (
+                cb.savearrays &&
+                value isa AbstractArray &&
+                ndims(value) in (1, 2, 3)
+            )
                 fmt = (L, HW, HWC)[ndims(value)]
                 minval, maxval = extrema(value)
                 if minval != maxval
