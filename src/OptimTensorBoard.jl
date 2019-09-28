@@ -23,10 +23,20 @@ optimcallback(args...; callback=returnfalse, savearrays=true, kwargs...) =
 
 returnfalse(_) = false
 
+@enum ArrayHandler DONTSAVE HISTOGRAM IMAGE
+
+# Is it a good idea?
+Base.convert(::Type{ArrayHandler}, yes::Bool) = yes ? HISTOGRAM : DONTSAVE
+function Base.convert(::Type{ArrayHandler}, name::Symbol)
+    name == :histogram && return HISTOGRAM
+    name == :image && return IMAGE
+    throw(ArgumentError("Unknown array handler: $name"))
+end
+
 struct OptimCallback
     logger::AbstractLogger
     callback
-    savearrays::Bool
+    savearrays::ArrayHandler
 end
 
 function (cb::OptimCallback)(tr)
@@ -46,9 +56,11 @@ function (cb::OptimCallback)(tr)
         for (key, value) in os.metadata
             if value isa Union{Real, Complex}
                 log_value(logger, "optim/metadata/$key", value)
+            elseif cb.savearrays === HISTOGRAM && value isa AbstractArray{<:Real}
+                log_histogram(logger, "optim/metadata/$key", vec(collect(value)))
             elseif (
-                cb.savearrays &&
-                value isa AbstractArray &&
+                cb.savearrays === IMAGE &&
+                value isa AbstractArray{<:Real} &&
                 ndims(value) in (1, 2, 3)
             )
                 fmt = (L, HW, HWC)[ndims(value)]
