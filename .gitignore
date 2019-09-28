@@ -5,4 +5,5 @@
 /dev/
 /docs/build/
 /docs/site/
+/test/tmp
 Manifest.toml

@@ -11,7 +11,9 @@ TensorBoardLogger = "899adc3e-224a-11e9-021f-63837185c80f"
 julia = "1.2"
 
 [extras]
+ImageMagick = "6218d12a-5da1-5696-b52f-db25d2ecc6d1"
+Optim = "429524aa-4258-5aef-a3af-852621145aeb"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Test"]
+test = ["ImageMagick", "Optim", "Test"]
